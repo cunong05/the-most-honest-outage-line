@@ -20,10 +20,12 @@ function verifyEntry(entry: string): void {
 
 verifyEntry(ENTRY);
 
-const dir = dirname(fileURLToPath(import.meta.url));
-const outDir = join(dir, "output");
+const outDir = "/output"; // Absolute: the gate reads /output/entry.txt, never a repo-relative path.
 mkdirSync(outDir, { recursive: true });
 const outPath = join(outDir, "entry.txt");
+if (!outPath.startsWith("/output/")) {
+  throw new Error("outPath must be under /output");
+}
 // Write exactly ENTRY as UTF-8 with no trailing newline appended.
 if (ENTRY.endsWith("\n")) {
   throw new Error("ENTRY must not end with a newline");
@@ -33,6 +35,9 @@ writeFileSync(outPath, ENTRY, "utf8");
 const readBack = readFileSync(outPath, "utf8");
 if (readBack !== ENTRY) {
   throw new Error("Read-back mismatch: entry.txt differs from ENTRY");
+}
+if (Buffer.from(readBack, "utf8").length !== Buffer.from(ENTRY, "utf8").length) {
+  throw new Error("byte length mismatch: entry.txt differs from ENTRY");
 }
 
 console.log(`Wrote ${outPath} (${ENTRY.length} characters)`);
